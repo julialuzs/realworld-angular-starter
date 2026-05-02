@@ -1,5 +1,5 @@
 name: Lighthouse CI
-on: [push]
+on: [push, pull_request]
 jobs:
    lhci:
     name: Lighthouse
@@ -28,6 +28,6 @@ jobs:
       - name: run Lighthouse CI
         run: |
           npm install -g @lhci/cli@0.15.x
-          lhci autorun
+          lhci autorun --collect.staticDistDir=dist/realworld-angular-starter
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
