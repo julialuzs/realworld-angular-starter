@@ -1,0 +1,104 @@
+name: Custom Deploy Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ETAPA 1: Validação do Código
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Instalar dependências
+        run: npm ci
+        
+      - name: Rodar Linter e Testes
+        run: |
+          npm run lint
+          npm run test:unit
+
+  # ETAPA 2: Deploy de Preview (Para Pull Requests ou branch develop)
+  deploy-preview:
+    needs: validate
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Vercel CLI
+        run: npm install --global vercel
+        
+      - name: Puxar configurações da Vercel
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          
+      - name: Build do Projeto (Preview)
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Enviar para Vercel (Preview)
+        id: deploy
+        run: echo "url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar validador de acessibilidade
+        run: |
+          npm install --no-save --no-package-lock poc-validador-acessibilidade
+          npm install --prefix node_modules/poc-validador-acessibilidade
+          npx --prefix node_modules/poc-validador-acessibilidade playwright install chromium --with-deps
+
+      - name: Auditoria de acessibilidade
+        run: npm run audit --prefix node_modules/poc-validador-acessibilidade -- --config audit.config.ci.json --out reports/consolidated-report.json
+
+  # ETAPA 3: Deploy de Produção (Apenas quando mergear na Main)
+  deploy-production:
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Vercel CLI
+        run: npm install --global vercel
+        
+      - name: Puxar configurações da Vercel
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          
+      - name: Build do Projeto (Produção)
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Enviar para Vercel (Produção)
+        id: deploy
+        run: echo "url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar validador de acessibilidade
+        run: |
+          npm install --no-save --no-package-lock poc-validador-acessibilidade
+          npm install --prefix node_modules/poc-validador-acessibilidade
+          npx --prefix node_modules/poc-validador-acessibilidade playwright install chromium --with-deps
+
+      - name: Auditoria de acessibilidade
+        run: npm run audit --prefix node_modules/poc-validador-acessibilidade -- --config audit.config.ci.json --out reports/consolidated-report.json
