@@ -32,7 +32,8 @@ jobs:
           mkdir -p reports
           npm run audit --prefix accessibility-audit/node_modules/poc-validador-acessibilidade -- \
             --config "$GITHUB_WORKSPACE/audit.config.ci.json" \
-            --out "$GITHUB_WORKSPACE/reports/consolidated-report.html"
+            --out "$GITHUB_WORKSPACE/reports/consolidated-report.json" \
+            --html "$GITHUB_WORKSPACE/reports/consolidated-report.html"
 
       - name: Upload audit report
         if: always()
