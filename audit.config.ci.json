@@ -1,0 +1,5 @@
+{
+  "baseUrl": "https://test-project-coral-five.vercel.app",
+  "routes": ["/", "/about"],
+  "includeW3c": true
+}
