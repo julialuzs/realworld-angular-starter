@@ -1,5 +1,6 @@
 {
   "baseUrl": "https://test-project-coral-five.vercel.app",
   "routes": ["/", "/about"],
-  "includeW3c": true
+  "includeW3c": true,
+  "projectId": "885e4883-16df-424c-8532-4be710691596"
 }
