@@ -20,17 +20,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Argos
-        run: npm install argos-avaliador-acessibilidade --prefix argos
-
-      - name: Install Playwright browsers
-        run: npx playwright install chromium --with-deps
-        working-directory: argos/node_modules/argos-avaliador-acessibilidade
-
       - name: Run accessibility audit against deployed site
-        run: |
-          npm run audit --prefix argos/node_modules/argos-avaliador-acessibilidade -- \
-            --config "$GITHUB_WORKSPACE/audit.config.json"
+        run: npx --yes argos-avaliador-acessibilidade
 
       - name: Upload audit report
         if: always()
